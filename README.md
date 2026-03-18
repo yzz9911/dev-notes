@@ -11,7 +11,7 @@ A collection of solutions and notes for real-world development issues
 ## 技术栈
 - 前端：Vue.js
 - 后端：Spring Boot
-- 持久层：MyBatis
+- 持久层：Spring Data JPA
 - 数据库：PostgreSQL（Supabase免费服务）
 - 图片存储：Cloudflare R2（免费）
 - 代码托管：GitHub（免费）
