@@ -11,10 +11,13 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    host: '0.0.0.0',  // 允许外部访问
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',
-        changeOrigin: true
+        // 在 Docker 中使用服务名 'backend'，否则使用 localhost
+        target: process.env.DOCKER_MODE ? 'http://backend:8080' : 'http://localhost:8080',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, '/api')
       }
     }
   },

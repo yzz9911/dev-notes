@@ -13,7 +13,7 @@ export const useArticleStore = defineStore('article', () => {
   const fetchArticles = async () => {
     loading.value = true
     try {
-      const response = await apiClient.get('/api/articles')
+      const response = await apiClient.get('/articles')
       articles.value = response.data
       error.value = null
     } catch (err) {
@@ -27,7 +27,7 @@ export const useArticleStore = defineStore('article', () => {
   const fetchArticleById = async (id) => {
     loading.value = true
     try {
-      const response = await apiClient.get(`/api/articles/${id}`)
+      const response = await apiClient.get(`/articles/${id}`)
       currentArticle.value = response.data
       error.value = null
     } catch (err) {
@@ -40,7 +40,7 @@ export const useArticleStore = defineStore('article', () => {
 
   const createArticle = async (articleData) => {
     try {
-      const response = await apiClient.post('/api/articles', articleData)
+      const response = await apiClient.post('/articles', articleData)
       articles.value.unshift(response.data)
       return response.data
     } catch (err) {
@@ -51,7 +51,7 @@ export const useArticleStore = defineStore('article', () => {
 
   const updateArticle = async (id, articleData) => {
     try {
-      const response = await apiClient.put(`/api/articles/${id}`, articleData)
+      const response = await apiClient.put(`/articles/${id}`, articleData)
       const index = articles.value.findIndex(a => a.id === id)
       if (index > -1) {
         articles.value[index] = response.data
@@ -65,7 +65,7 @@ export const useArticleStore = defineStore('article', () => {
 
   const deleteArticle = async (id) => {
     try {
-      await apiClient.delete(`/api/articles/${id}`)
+      await apiClient.delete(`/articles/${id}`)
       articles.value = articles.value.filter(a => a.id !== id)
     } catch (err) {
       error.value = err.message

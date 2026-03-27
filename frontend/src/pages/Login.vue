@@ -51,7 +51,9 @@ const handleLogin = async () => {
   error.value = ''
   
   try {
-    const response = await authService.login(form.username, form.password)
+    // console.log(form.password)
+    // console.log(form.value.password)
+    const response = await authService.login(form.value.username, form.value.password)
     authStore.setToken(response.data.token)
     authStore.setUser(response.data.user)
     router.push('/admin')

@@ -21,10 +21,11 @@ services:
 
   # Backend Service
   backend:
-    build:
-      context: .
-      dockerfile: ./backend/Dockerfile
+    image: maven:3.8-openjdk-11
     container_name: blog-backend
+    working_dir: /app
+    volumes:
+      - ./backend:/app
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/blog_db
       SPRING_DATASOURCE_USERNAME: postgres
@@ -38,24 +39,25 @@ services:
         condition: service_healthy
     networks:
       - blog-network
-    command: >
-      sh -c "java -jar app.jar
-      --spring.datasource.url=jdbc:postgresql://postgres:5432/blog_db
-      --spring.datasource.username=postgres
-      --spring.datasource.password=postgres"
+    command: mvn spring-boot:run
 
   # Frontend Service
   frontend:
-    build:
-      context: .
-      dockerfile: ./frontend/Dockerfile
+    image: node:18-alpine
     container_name: blog-frontend
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    environment:
+      DOCKER_MODE: "true"
     ports:
-      - "80:80"
+      - "3000:3000"
+      - "5173:5173"
     depends_on:
       - backend
     networks:
       - blog-network
+    command: sh -c "npm install --legacy-peer-deps && npm run dev -- --host 0.0.0.0"
 
   # MailHog for Email Testing (Optional)
   mailhog:

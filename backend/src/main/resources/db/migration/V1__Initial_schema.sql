@@ -42,5 +42,5 @@ CREATE INDEX idx_comments_verified ON comments(verified);
 
 -- Insert default author user
 INSERT INTO users (username, password, role, enabled) VALUES 
-('admin', '$2a$10$dXJ3SW6G7P50eS3jEK4A0e.2sbtx1sJjI4YwAKw3L7LDmWVN.rIJC', 'AUTHOR', TRUE);
+('admin', 'TODO', 'AUTHOR', TRUE);
 -- Password: password (hashed with bcrypt)

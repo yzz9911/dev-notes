@@ -13,7 +13,9 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -23,26 +25,47 @@ public class AuthController {
     private final JwtService jwtService;
     private final CustomUserDetailsService userDetailsService;
     private final ModelMapper modelMapper;
+    private final PasswordEncoder passwordEncoder;
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        loginRequest.getUsername(),
-                        loginRequest.getPassword()
-                )
-        );
+        try {
+//            System.out.println("hit login");
+//
+//            UserDetails userDetails = userDetailsService.loadUserByUsername(loginRequest.getUsername());
+//
+//            System.out.println("输入密码: " + loginRequest.getPassword());
+//            System.out.println("数据库密码: " + userDetails.getPassword());
+//
+//            System.out.println("match结果: " +
+//                    passwordEncoder.matches(
+//                            loginRequest.getPassword(),
+//                            userDetails.getPassword()
+//                    )
+//            );
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        String token = jwtService.generateToken(authentication);
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            loginRequest.getUsername(),
+                            loginRequest.getPassword()
+                    )
+            );
 
-        User user = (User) authentication.getPrincipal();
-        UserDTO userDTO = modelMapper.map(user, UserDTO.class);
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            String token = jwtService.generateToken(authentication);
 
-        return ResponseEntity.ok(LoginResponse.builder()
-                .token(token)
-                .user(userDTO)
-                .build());
+            User user = (User) authentication.getPrincipal();
+            UserDTO userDTO = modelMapper.map(user, UserDTO.class);
+
+            return ResponseEntity.ok(LoginResponse.builder()
+                    .token(token)
+                    .user(userDTO)
+                    .build());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     @GetMapping("/me")
