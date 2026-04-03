@@ -1,7 +1,16 @@
 <template>
   <div class="home-page">
     <div class="articles-header">
-      <h1>所有文章</h1>
+      <div class="header-top">
+        <h1>所有文章</h1>
+        <button
+          v-if="authStore.isAuthenticated"
+          @click="() => router.push('/publish')"
+          class="btn-publish"
+        >
+          + 发布文章
+        </button>
+      </div>
       <div class="search-bar">
         <input
           v-model="searchQuery"
@@ -10,6 +19,7 @@
           @keyup.enter="handleSearch"
         />
         <button @click="handleSearch" class="btn-search">搜索</button>
+        <button v-if="searchResults !== null" @click="clearSearch" class="btn-clear">清空</button>
       </div>
     </div>
 
@@ -41,27 +51,52 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useArticleStore } from '@/store/article'
+import { useAuthStore } from '@/store/auth'
 
+const router = useRouter()
 const articleStore = useArticleStore()
+const authStore = useAuthStore()
 const searchQuery = ref('')
 const loading = ref(false)
+const allArticles = ref([])
+const searchResults = ref(null)
 
-const articles = ref([])
+const articles = computed(() => {
+  // 如果有搜索结果，显示搜索结果
+  if (searchResults.value !== null) {
+    return searchResults.value
+  }
+  return allArticles.value
+})
 
 onMounted(async () => {
   loading.value = true
   await articleStore.fetchArticles()
-  articles.value = articleStore.articles
+  allArticles.value = articleStore.articles
   loading.value = false
 })
 
 const handleSearch = async () => {
-  if (searchQuery.value.trim()) {
-    // TODO: 实现搜索功能
-    console.log('搜索:', searchQuery.value)
+  if (!searchQuery.value.trim()) {
+    searchResults.value = null
+    return
   }
+
+  loading.value = true
+  try {
+    const results = await articleStore.searchArticles(searchQuery.value)
+    searchResults.value = results
+  } finally {
+    loading.value = false
+  }
+}
+
+const clearSearch = () => {
+  searchQuery.value = ''
+  searchResults.value = null
 }
 
 const formatDate = (dateString) => {
@@ -88,15 +123,37 @@ const truncateContent = (content, length) => {
   margin-bottom: 3rem;
 }
 
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
 .articles-header h1 {
   font-size: 2.5rem;
-  margin-bottom: 1.5rem;
   color: #333;
+}
+
+.btn-publish {
+  padding: 0.75rem 1.5rem;
+  background: #00c853;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.3s;
+}
+
+.btn-publish:hover {
+  background: #00a842;
 }
 
 .search-bar {
   display: flex;
   gap: 0.5rem;
+  margin-top: 1rem;
 }
 
 .search-bar input {
@@ -120,6 +177,21 @@ const truncateContent = (content, length) => {
 
 .btn-search:hover {
   background: #0052a3;
+}
+
+.btn-clear {
+  padding: 0.75rem 1.5rem;
+  background: #999;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.3s;
+}
+
+.btn-clear:hover {
+  background: #777;
 }
 
 .loading {
@@ -210,6 +282,16 @@ const truncateContent = (content, length) => {
 @media (max-width: 768px) {
   .articles-header h1 {
     font-size: 2rem;
+  }
+
+  .header-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .btn-publish {
+    width: 100%;
   }
 
   .article-card {

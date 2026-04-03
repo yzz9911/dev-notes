@@ -5,7 +5,7 @@
         <router-link to="/" class="navbar-brand">📝 我的博客</router-link>
         <div class="navbar-menu">
           <router-link to="/" class="nav-link">文章列表</router-link>
-          <router-link v-if="authStore.isAuthor" to="/admin" class="nav-link">管理后台</router-link>
+          <router-link v-if="authStore.isAuthenticated" to="/admin" class="nav-link">管理后台</router-link>
           <button v-if="!authStore.isAuthenticated" @click="goLogin" class="btn-login">
             登录
           </button>

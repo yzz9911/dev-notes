@@ -53,6 +53,17 @@ A collection of solutions and notes for real-world development issues
 - 部署需配置 Docker、CI/CD、SSL/TLS
 - 监控与备份建议配置
 
+## docker启动
+- docker-compose down
+- docker-compose build --no-cache backend
+- docker-compose up -d
+docker-compose -f docker-compose-prod.yml down
+docker-compose -f docker-compose-prod.yml build --no-cache backend
+docker-compose -f docker-compose-prod.yml up -d
+
+docker-compose logs -f backend
+
+
 ---
 
 如需详细技术选型或集成方案，可进一步补充。

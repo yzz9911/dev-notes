@@ -4,6 +4,7 @@ import Home from '@/pages/HomePage.vue'
 import ArticleDetail from '@/pages/ArticleDetail.vue'
 import Login from '@/pages/Login.vue'
 import Admin from '@/pages/Admin.vue'
+import PublishArticle from '@/pages/PublishArticle.vue'
 import NotFound from '@/pages/NotFound.vue'
 
 const routes = [
@@ -32,6 +33,12 @@ const routes = [
     meta: { title: '管理后台', requiresAuth: true }
   },
   {
+    path: '/publish',
+    name: 'PublishArticle',
+    component: PublishArticle,
+    meta: { title: '发布文章', requiresAuth: true }
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: NotFound
@@ -46,13 +53,13 @@ const router = createRouter({
 // 路由守卫
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
-  
+
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next('/login')
   } else {
     next()
   }
-  
+
   // 更新页面标题
   document.title = to.meta.title ? `${to.meta.title} - 我的博客` : '我的博客'
 })

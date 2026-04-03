@@ -2,17 +2,17 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
-    container_name: blog-postgres
+    container_name: blog-postgres-prod
     environment:
-      POSTGRES_DB: blog_db
+      POSTGRES_DB: blog_db_prod
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data_prod:/var/lib/postgresql/data
     networks:
-      - blog-network
+      - blog-network-prod
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -24,52 +24,47 @@ services:
     build:
       context: .
       dockerfile: ./backend/Dockerfile
-    container_name: blog-backend
+    container_name: blog-backend-prod
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/blog_db
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/blog_db_prod
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
       JWT_SECRET: your-secret-key-change-in-production
       SPRING_JPA_HIBERNATE_DDL_AUTO: validate
     ports:
-      - "8080:8080"
+      - "8081:8080"
     depends_on:
       postgres:
         condition: service_healthy
     networks:
-      - blog-network
-    command: >
-      sh -c "java -jar app.jar
-      --spring.datasource.url=jdbc:postgresql://postgres:5432/blog_db
-      --spring.datasource.username=postgres
-      --spring.datasource.password=postgres"
+      - blog-network-prod
 
   # Frontend Service (Production)
   frontend:
     build:
       context: .
       dockerfile: ./frontend/Dockerfile
-    container_name: blog-frontend
+    container_name: blog-frontend-prod
     ports:
       - "80:80"
     depends_on:
       - backend
     networks:
-      - blog-network
+      - blog-network-prod
 
   # MailHog for Email Testing (Optional)
   mailhog:
     image: mailhog/mailhog:latest
-    container_name: blog-mailhog
+    container_name: blog-mailhog-prod
     ports:
-      - "1025:1025"
-      - "8025:8025"
+      - "1026:1025"
+      - "8026:8025"
     networks:
-      - blog-network
+      - blog-network-prod
 
 volumes:
-  postgres_data:
+  postgres_data_prod:
 
 networks:
-  blog-network:
+  blog-network-prod:
     driver: bridge

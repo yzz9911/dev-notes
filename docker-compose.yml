@@ -50,6 +50,8 @@ services:
       - ./frontend:/app
     environment:
       DOCKER_MODE: "true"
+      CHOKIDAR_USEPOLLING: "true"
+      CHOKIDAR_INTERVAL: "100"
     ports:
       - "3000:3000"
       - "5173:5173"

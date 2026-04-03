@@ -3,6 +3,10 @@
     <div v-if="loading" class="loading">加载中...</div>
 
     <template v-else-if="article">
+      <div class="article-nav">
+        <button @click="goBack" class="btn-back">← 返回</button>
+      </div>
+
       <div class="article-header">
         <h1>{{ article.title }}</h1>
         <div class="article-meta">
@@ -58,13 +62,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useRoute } from 'vue-router'
-import { marked } from 'marked'
+import { ref, onMounted, computed, nextTick, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { renderMarkdown } from '@/services/markdown'
 import { useArticleStore } from '@/store/article'
 import { commentService } from '@/services/index'
 
 const route = useRoute()
+const router = useRouter()
 const articleStore = useArticleStore()
 
 const article = ref(null)
@@ -76,14 +81,65 @@ const commentForm = ref({
   content: ''
 })
 
+// 监视 article 变化
+watch(
+  article,
+  (newArticle) => {
+    // 文章变化时的处理
+  }
+)
+
 const renderedContent = computed(() => {
-  return article.value ? marked(article.value.content) : ''
+  return article.value ? renderMarkdown(article.value.content) : ''
 })
+
+// 渲染 Mermaid 图表的辅助函数
+const renderMermaidCharts = async () => {
+  if (!window.mermaid) {
+    return
+  }
+
+  try {
+    if (window.mermaid.run) {
+      await window.mermaid.run()
+    }
+  } catch (err) {
+    console.error('Mermaid 渲染失败:', err)
+  }
+}
+
+// 带重试的渲染函数 - 确保 DOM 已更新
+const renderMermaidChartsWithRetry = async () => {
+  for (let i = 0; i < 10; i++) {
+    await new Promise(resolve => setTimeout(resolve, 50))
+
+    const container = document.querySelector('.markdown-content')
+    const mermaidDivs = document.querySelectorAll('.markdown-content .mermaid')
+
+    if (mermaidDivs.length > 0) {
+      await renderMermaidCharts()
+      return true
+    }
+  }
+
+  return false
+}
+
+// 监视 renderedContent 变化，渲染 Mermaid 图表
+watch(
+  renderedContent,
+  async (newContent) => {
+    if (newContent) {
+      await nextTick()
+      await renderMermaidChartsWithRetry()
+    }
+  }
+)
 
 onMounted(async () => {
   await articleStore.fetchArticleById(route.params.id)
   article.value = articleStore.currentArticle
-  
+
   if (article.value) {
     // 获取评论
     try {
@@ -92,9 +148,16 @@ onMounted(async () => {
     } catch (err) {
       console.error('获取评论失败:', err)
     }
+
+    // 关闭 loading，让模板渲染 article 内容
+    loading.value = false
+
+    // 等待 Vue 渲染 article 内容，然后初始化 Mermaid
+    await nextTick()
+    await renderMermaidChartsWithRetry()
+  } else {
+    loading.value = false
   }
-  
-  loading.value = false
 })
 
 const submitComment = async () => {
@@ -105,6 +168,10 @@ const submitComment = async () => {
   } catch (err) {
     console.error('发表评论失败:', err)
   }
+}
+
+const goBack = () => {
+  router.back()
 }
 
 const formatDate = (dateString) => {
@@ -122,6 +189,25 @@ const formatDate = (dateString) => {
 .article-detail {
   max-width: 900px;
   margin: 0 auto;
+}
+
+.article-nav {
+  margin-bottom: 2rem;
+}
+
+.btn-back {
+  padding: 0.5rem 1rem;
+  background: #666;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background 0.3s;
+}
+
+.btn-back:hover {
+  background: #555;
 }
 
 .loading,
@@ -217,6 +303,21 @@ const formatDate = (dateString) => {
 
 .markdown-content a:hover {
   text-decoration: underline;
+}
+
+.markdown-content .mermaid {
+  display: block;
+  text-align: center;
+  margin: 2rem 0;
+  background: #f9f9f9;
+  padding: 1rem;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+
+.markdown-content svg {
+  max-width: 100%;
+  height: auto;
 }
 
 .comments-section {

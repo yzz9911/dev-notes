@@ -1,7 +1,7 @@
 <template>
   <div class="admin-page">
     <h1>管理后台</h1>
-    
+
     <div class="tabs">
       <button
         v-for="tab in tabs"
@@ -16,7 +16,7 @@
     <!-- 文章列表标签 -->
     <div v-if="currentTab === '文章管理'" class="tab-content">
       <div class="articles-toolbar">
-        <button @click="openCreateForm" class="btn-create">+ 新建文章</button>
+        <router-link to="/publish" class="btn-create">+ 新建文章</router-link>
       </div>
 
       <div class="articles-table">
@@ -31,48 +31,20 @@
           </thead>
           <tbody>
             <tr v-for="article in articleStore.articles" :key="article.id">
-              <td>{{ article.title }}</td>
+              <td>
+                <router-link :to="`/article/${article.id}`" class="article-title-link">
+                  {{ article.title }}
+                </router-link>
+              </td>
               <td>{{ article.category || '-' }}</td>
               <td>{{ formatDate(article.createdAt) }}</td>
               <td class="actions">
-                <button @click="editArticle(article)" class="btn-edit">编辑</button>
+                <router-link :to="`/publish?id=${article.id}`" class="btn-edit">编辑</router-link>
                 <button @click="deleteArticle(article.id)" class="btn-delete">删除</button>
               </td>
             </tr>
           </tbody>
         </table>
-      </div>
-    </div>
-
-    <!-- 文章编辑表单 -->
-    <div v-if="showForm" class="modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2>{{ editingArticle ? '编辑文章' : '新建文章' }}</h2>
-          <button @click="closeForm" class="btn-close">×</button>
-        </div>
-        <form @submit.prevent="saveArticle">
-          <div class="form-group">
-            <label>标题</label>
-            <input v-model="formData.title" type="text" required />
-          </div>
-          <div class="form-group">
-            <label>分类</label>
-            <input v-model="formData.category" type="text" />
-          </div>
-          <div class="form-group">
-            <label>摘要</label>
-            <textarea v-model="formData.excerpt" rows="3"></textarea>
-          </div>
-          <div class="form-group">
-            <label>内容</label>
-            <textarea v-model="formData.content" rows="10" required></textarea>
-          </div>
-          <div class="form-actions">
-            <button type="button" @click="closeForm" class="btn-cancel">取消</button>
-            <button type="submit" class="btn-save">保存</button>
-          </div>
-        </form>
       </div>
     </div>
 
@@ -93,55 +65,19 @@ import { useArticleStore } from '@/store/article'
 const articleStore = useArticleStore()
 const currentTab = ref('文章管理')
 const tabs = ref(['文章管理', '设置'])
-const showForm = ref(false)
-const editingArticle = ref(null)
-const formData = ref({
-  title: '',
-  category: '',
-  excerpt: '',
-  content: ''
-})
 
 onMounted(async () => {
   await articleStore.fetchArticles()
 })
 
-const openCreateForm = () => {
-  editingArticle.value = null
-  formData.value = { title: '', category: '', excerpt: '', content: '' }
-  showForm.value = true
-}
-
-const editArticle = (article) => {
-  editingArticle.value = article
-  formData.value = { ...article }
-  showForm.value = true
-}
-
-const closeForm = () => {
-  showForm.value = false
-  editingArticle.value = null
-}
-
-const saveArticle = async () => {
-  try {
-    if (editingArticle.value) {
-      await articleStore.updateArticle(editingArticle.value.id, formData.value)
-    } else {
-      await articleStore.createArticle(formData.value)
-    }
-    closeForm()
-  } catch (err) {
-    console.error('保存失败:', err)
-  }
-}
-
 const deleteArticle = async (id) => {
   if (confirm('确定要删除此文章吗？')) {
     try {
       await articleStore.deleteArticle(id)
+      await articleStore.fetchArticles()
     } catch (err) {
       console.error('删除失败:', err)
+      alert('删除失败: ' + err.message)
     }
   }
 }
@@ -201,6 +137,7 @@ const formatDate = (dateString) => {
 }
 
 .btn-create {
+  display: inline-block;
   background: #00c853;
   color: white;
   padding: 0.75rem 1.5rem;
@@ -208,6 +145,8 @@ const formatDate = (dateString) => {
   border-radius: 4px;
   cursor: pointer;
   font-size: 1rem;
+  text-decoration: none;
+  transition: background 0.3s;
 }
 
 .btn-create:hover {
@@ -248,6 +187,20 @@ td {
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.9rem;
+  text-decoration: none;
+  display: inline-block;
+  transition: background 0.3s;
+}
+
+.article-title-link {
+  color: #0066cc;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.article-title-link:hover {
+  color: #0052a3;
+  text-decoration: underline;
 }
 
 .btn-edit {
@@ -268,108 +221,12 @@ td {
   background: #ee5a52;
 }
 
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
+.settings-form {
+  padding: 2rem;
 }
 
-.modal-content {
-  background: white;
-  border-radius: 8px;
-  width: 90%;
-  max-width: 700px;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem;
-  border-bottom: 1px solid #ddd;
-}
-
-.modal-header h2 {
-  margin: 0;
+.settings-form h2 {
+  margin-bottom: 1rem;
   color: #333;
-}
-
-.btn-close {
-  background: none;
-  border: none;
-  font-size: 2rem;
-  cursor: pointer;
-  color: #999;
-}
-
-.btn-close:hover {
-  color: #333;
-}
-
-form {
-  padding: 1.5rem;
-}
-
-.form-group {
-  margin-bottom: 1.5rem;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-  color: #333;
-}
-
-.form-group input,
-.form-group textarea {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
-  font-family: inherit;
-}
-
-.form-actions {
-  display: flex;
-  gap: 1rem;
-  justify-content: flex-end;
-}
-
-.btn-cancel,
-.btn-save {
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 1rem;
-}
-
-.btn-cancel {
-  background: #999;
-  color: white;
-}
-
-.btn-cancel:hover {
-  background: #777;
-}
-
-.btn-save {
-  background: #0066cc;
-  color: white;
-}
-
-.btn-save:hover {
-  background: #0052a3;
 }
 </style>

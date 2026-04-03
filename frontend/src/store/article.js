@@ -73,6 +73,23 @@ export const useArticleStore = defineStore('article', () => {
     }
   }
 
+  const searchArticles = async (keyword) => {
+    loading.value = true
+    try {
+      const response = await apiClient.get('/articles/search', {
+        params: { q: keyword }
+      })
+      error.value = null
+      return response.data
+    } catch (err) {
+      error.value = err.message
+      console.error('搜索失败:', err)
+      return []
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     articles,
     currentArticle,
@@ -83,6 +100,7 @@ export const useArticleStore = defineStore('article', () => {
     fetchArticleById,
     createArticle,
     updateArticle,
-    deleteArticle
+    deleteArticle,
+    searchArticles
   }
 })
