@@ -1,0 +1,77 @@
+import { marked } from 'marked'
+import hljs from 'highlight.js'
+import 'highlight.js/styles/atom-one-dark.css'
+
+/**
+ * 自定义Renderer类用于处理代码块（包括Mermaid）
+ *
+ * 重要：marked 9.1.6中，code方法签名为：
+ * code(code: string, infostring: string | undefined, escaped: boolean): string
+ *
+ * 参数说明：
+ * - code: 代码块的文本内容
+ * - infostring: 围栏代码块的语言标记 (如 ```mermaid 中的 "mermaid")
+ * - escaped: 代码是否已被HTML转义
+ */
+class MyRenderer extends marked.Renderer {
+  code(code, infostring, escaped) {
+    // 提取语言标记（可能是"mermaid"或"javascript"等）
+    const lang = (infostring || '').trim()
+
+    // 检查是否为Mermaid代码块
+    if (lang === 'mermaid') {
+      // Mermaid图表需要这个特殊的div标签
+      // mermaid.run() 会自动查找class="mermaid"的div并渲染
+      return `<div class="mermaid">\n${code}\n</div>\n`
+    }
+
+    // 其他代码块 - 使用高亮
+    let highlightedCode = code
+
+    if (lang) {
+      try {
+        // 使用highlight.js进行代码高亮
+        highlightedCode = hljs.highlight(code, { language: lang }).value
+      } catch (err) {
+        console.warn(`代码高亮失败 - 语言: ${lang}`, err)
+        // 如果指定的语言不支持，自动检测
+        highlightedCode = hljs.highlightAuto(code).value
+      }
+    } else {
+      // 没有指定语言时，自动检测
+      highlightedCode = hljs.highlightAuto(code).value
+    }
+
+    // 返回高亮后的代码块HTML
+    return `<pre><code class="hljs language-${lang || ''}">${highlightedCode}</code></pre>\n`
+  }
+}
+
+/**
+ * 配置marked库
+ *
+ * 注意：marked 9.x推荐使用 marked.use() 而不是 marked.setOptions()
+ * 但setOptions()仍然可用以保持向后兼容性
+ */
+marked.use({
+  renderer: new MyRenderer(),
+  breaks: true,  // 将\n转换为<br>
+  gfm: true,     // 启用GitHub Flavored Markdown
+})
+
+/**
+ * 渲染Markdown内容为HTML
+ *
+ * @param {string} content - 原始Markdown文本
+ * @returns {string} 转换后的HTML
+ */
+export function renderMarkdown(content) {
+  if (!content) return ''
+
+  try {
+    return marked.parse(content)
+  } catch (err) {
+    console.error('Markdown渲染错误:', err)
+    return `<p>内容渲染失败: ${err.message}</p>`
+  }
+}
